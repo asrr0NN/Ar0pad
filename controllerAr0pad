@@ -1,0 +1,392 @@
+package aropad;
+
+import com.sun.javafx.css.StyleCacheEntry;
+import com.sun.org.apache.xpath.internal.SourceTree;
+import javafx.application.Platform;
+import javafx.event.EventHandler;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.Cursor;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.util.*;
+import static javafx.scene.input.KeyCode.Z;
+
+
+public class Controller implements Initializable
+{
+
+	public static int x=0;
+
+	String filePath=null;
+
+	String family="System";
+	String style="Normal";
+	int size=15;
+	String color="black";
+	List<String> undoList=new ArrayList<>(31);
+	List<Integer> undoCaret=new ArrayList<>();
+	int undoSizeValue=50;
+	List<String> redoList=new ArrayList<>();
+	List<Integer> redoCaret=new ArrayList<>();
+
+	@FXML
+	public GridPane gridPane;
+	@FXML
+	public Label fileName;
+	@FXML
+	public TextArea tarea;
+	@FXML
+	public Label labelIdentifier;
+	@FXML
+	public Label totalLine;
+	@FXML
+	public Label bracketCount;
+
+
+
+	public void ExitMethod() throws FileNotFoundException {
+		System.out.println("end");
+		Alert endSaveDialog=new Alert(Alert.AlertType.NONE);
+		endSaveDialog.setTitle("Aropad");
+		//endSaveDialog.setHeaderText("Do you want to save changes to H");
+		endSaveDialog.setContentText("Do you want to save changes to ");
+		ButtonType Save=new ButtonType("Save");
+		ButtonType Exit=new ButtonType("Exit");
+		//ButtonType Cancel=new ButtonType("Cancel");
+		endSaveDialog.getButtonTypes().setAll(Save,Exit);
+		Optional<ButtonType> clickedbtn=endSaveDialog.showAndWait();
+		if(clickedbtn.get()==Save){
+			System.out.println("save");
+			SaveAsMethod();
+
+		}
+		if( ( (clickedbtn.get()==Exit) && (x==0) ) || (x==0) ){
+			//System.exit(0);
+			int x;
+			x= Integer.parseInt(labelIdentifier.getText());
+			Main.closeWindow(x);
+		}
+	}
+
+	public void SaveMethod() throws FileNotFoundException {
+
+		System.out.println(tarea.getText());
+		if(filePath!=null){
+		File save=new File(filePath);
+		PrintWriter saveWriter=new PrintWriter(save);
+		System.out.println(tarea.getText());
+		saveWriter.print(tarea.getText());
+		saveWriter.close();
+		}
+		if(filePath==null) {
+			SaveAsMethod();
+		}
+	}
+
+	public void NewMethod() throws Exception {
+		Main new1=new Main();
+		new1.start(new Stage());
+	}
+
+	public void SaveAsMethod() throws FileNotFoundException {
+		FileChooser filechosser=new FileChooser();
+		filechosser.setTitle("Save As");
+		FileChooser.ExtensionFilter extfit=new FileChooser.ExtensionFilter("txtfiles(*.txt)","*.txt");
+		filechosser.getExtensionFilters().addAll(extfit,new FileChooser.ExtensionFilter("doc","*.doc"));
+	    File file=filechosser.showSaveDialog(null);
+	    filePath=file.getPath();
+	    SaveMethod();
+	    fileName.setText(file.getName());
+
+
+	    }
+
+	public  void OpenMethod() throws Exception {
+		String s=new String();
+		FileChooser filechosser=new FileChooser();
+		filechosser.setTitle("Save As");
+		FileChooser.ExtensionFilter extfit=new FileChooser.ExtensionFilter("txt(*.txt)","*.txt");
+		filechosser.getExtensionFilters().addAll(extfit,new FileChooser.ExtensionFilter("doc(*.doc)","*.doc"),new FileChooser.ExtensionFilter("Allfile","*.*"));
+		File file=filechosser.showOpenDialog(null);
+		if(file.canRead()){
+			System.out.println(file+"  file name");
+			System.out.println(file.getName());
+			filePath=file.getPath();
+			Scanner filedata=new Scanner(file);
+			while(filedata.hasNext()){
+				s=s+filedata.nextLine()+"\n";
+				tarea.setText(s);
+				setFileLabel(file.getName());
+			}
+		}
+	}
+	public void setFileLabel(String s){
+		fileName.setText(s);
+	}
+
+	public void fontChange() {
+
+		Dialog<ButtonType> dialog = new Dialog<>();
+		dialog.setTitle("Ar0pad");
+		dialog.setHeaderText("Font Setting");
+
+		Stage stage = (Stage) dialog.getDialogPane().getScene().getWindow();
+		stage.getIcons().add(new Image("Ar0padIcon.png"));
+
+		ButtonType apply = new ButtonType("Apply");
+		dialog.getDialogPane().getButtonTypes().addAll(apply, ButtonType.CLOSE);
+
+		GridPane grid = new GridPane();
+		//	grid.setHgap(10);
+		//	grid.setVgap(10);
+		//	grid.setPadding(new Insets(20, 150, 10, 10));
+
+		ChoiceBox<String> choiceBox1 = new ChoiceBox<>();
+		choiceBox1.getItems().addAll("System", "Agency FB", "Algerian", "Aparajita", "Arial");
+		choiceBox1.setValue(family);
+		ChoiceBox<String> choiceBox2 = new ChoiceBox<>();
+		choiceBox2.getItems().addAll("Bold", "Bold Italic", "Italic", "Normal");
+		choiceBox2.setValue(style);
+		ChoiceBox<Integer> choiceBox3 = new ChoiceBox<>();
+		for (int i = 1; i <= 96; i++) {
+			choiceBox3.getItems().add(i);
+		}
+		ChoiceBox<Integer> choiceBox4 = new ChoiceBox<>();
+		for (int i = 1; i <= 200; i++) {
+			choiceBox4.getItems().add(i);
+		}
+
+		TextField colorset=new TextField();
+		colorset.setText(color);
+
+		choiceBox3.setValue(size);
+		choiceBox4.setValue(undoSizeValue);
+
+		grid.add(new Label("Text Color"), 0, 0);
+		grid.add(colorset, 1, 0);
+		grid.add(new Label("Family"), 0, 1);
+		grid.add(choiceBox1, 1, 1);
+		grid.add(new Label("Style"), 0, 2);
+		grid.add(choiceBox2, 1, 2);
+		//grid.add(username, 1, 1);
+		grid.add(new Label("Undo size"), 0, 3);
+		grid.add(choiceBox4, 1, 3);
+		grid.add(new Label("Size"), 0, 4);
+		grid.add(choiceBox3, 1, 4);
+
+
+
+		dialog.getDialogPane().setContent(grid);
+		Optional<ButtonType> result = dialog.showAndWait();
+		if (result.get() == apply) {
+			family = choiceBox1.getValue();
+			style=choiceBox2.getValue();
+			size = choiceBox3.getValue();
+			undoSizeValue=choiceBox4.getValue();
+			color=colorset.getText();
+
+			tarea.setStyle("-fx-font:"+style+" "+size+"px "+family+
+					" ; -fx-highlight-fill: lightgray; -fx-highlight-text-fill: firebrick; -fx-text-fill:"
+					+color+" ;");
+			choiceBox1.setValue(family);
+			choiceBox2.setValue(style);
+			choiceBox3.setValue(size);
+		}
+		System.out.println("font change");
+	}
+	public void saveForUndo(){
+		tarea.setOnKeyPressed(event -> {
+			totalLinecount();
+			if((!event.isControlDown())&&( event.getCode()!=KeyCode.U ) ){
+				if(undoList.size()<=undoSizeValue){
+				//	System.out.println("add"+undoList.size());
+					undoList.add(tarea.getText());
+					undoCaret.add(tarea.getCaretPosition());
+				}
+				else{
+					for(int i=0;i<undoSizeValue-1;i++) {
+						undoList.set(i,undoList.get(i+1));
+						undoCaret.set(i,undoCaret.get(i+1));
+					}
+					undoList.set(undoSizeValue-1,tarea.getText());
+					undoCaret.set(undoSizeValue-1,tarea.getCaretPosition());
+				//	System.out.println(undoList.get(49));
+				}
+			}
+		});
+	}
+	public void undoDo(){
+		int x=tarea.getCaretPosition();
+		redoCaret.add(x);
+		if(undoList.size()>1) {
+			redoList.add(tarea.getText());
+			tarea.setText(undoList.get(undoList.size() - 1));
+			undoList.remove(undoList.size() - 1);
+			tarea.positionCaret(undoCaret.get(undoCaret.size()-1)+1);
+			undoCaret.remove(undoCaret.size()-1);
+		}
+	}
+	public void redoDo(){
+		if(redoList.size()>0) {
+			tarea.setText(redoList.get(redoList.size() - 1));
+			redoList.remove(redoList.size() - 1);
+			System.out.println(undoList.size()+"undodosize");
+			tarea.positionCaret(redoCaret.get(redoCaret.size()-1));
+			redoCaret.remove(redoCaret.size() - 1);
+		}
+	}
+
+	public void brackets(){
+		tarea.setOnKeyReleased(event -> {
+			if(event.getCode()== KeyCode.DIGIT9 && event.isShiftDown()) {
+				//System.out.println("(");
+				tarea.replaceText(tarea.getCaretPosition()-1,tarea.getCaretPosition(),"(  )");
+				tarea.positionCaret(tarea.getCaretPosition()-2);
+			}
+			if ((event.getCode() == (KeyCode.OPEN_BRACKET)&& !event.isShiftDown())) {
+				//System.out.println("[");
+				tarea.replaceText(tarea.getCaretPosition()-1,tarea.getCaretPosition(),"[]");
+				tarea.positionCaret(tarea.getCaretPosition()-1);
+			}
+			if ((event.getCode() == (KeyCode.OPEN_BRACKET)&& event.isShiftDown())) {
+				int x=gettabcount();
+				String s=getTabString(x+1,"\t");
+				String s1=getTabString(x,"\t");
+				//System.out.println("{");
+				tarea.replaceText(tarea.getCaretPosition()-1,tarea.getCaretPosition(),"{\n"+s+"\n"+s1+"}");
+				tarea.positionCaret(tarea.getCaretPosition()-2-x);
+			}
+			if ((event.getCode() == (KeyCode.ENTER))){
+				int x=gettabcount();
+				String s = getTabString(x,"\t");
+				tarea.replaceText(tarea.getCaretPosition()-1,tarea.getCaretPosition(),"\n"+s);
+			}
+		});
+	}
+
+	public int gettabcount(){
+		String s;
+		s=tarea.getText();
+		int count=0;
+		int x=0;
+		if(s.contains("\t")){
+		//	String[] s1=s.split("\n",tarea.getCaretPosition());
+			x=s.lastIndexOf("\n",tarea.getCaretPosition()-1);
+			x=s.lastIndexOf("\n",x-1);
+		//	x=s.lastIndexOf("\n",x-1);System.out.println(s.charAt(x)+"1");System.out.println(s.charAt(x+1)+"2");x=s.lastIndexOf("\n",x-1);
+
+			while('\t'==s.charAt(x+1)){
+				count+=1;
+				x=x+1;
+			}
+		}
+		return count;
+	}
+
+	public String getTabString(int x,String s1){
+		String s=new String();
+		for(int i=0;i<x;i++)
+			s+=s1;
+		return s;
+	}
+
+	public void totalLinecount(){
+		String[] s=tarea.getText().split("\n");
+		totalLine.setText("Total : "+(int)(s.length)+" Lines");
+	}
+	public void getBracketCount(){
+		bracketCount.setText("");
+		String s=tarea.getText();
+		int l=0;
+		int r=1;
+		int countCurly[]=new int[2];
+		int countSquare[]=new int[2];
+		int countRound[]=new int[2];
+		for(int i=0;i<2;i++){
+			countCurly[i]=0;
+			countRound[i]=0;
+			countSquare[i]=0;
+		}
+		for (int i=0;i<s.length();i++){
+			if('{'==s.charAt(i)){
+				System.out.println("1 {");
+				countCurly[l]+=1;
+			}
+			else if('}'==s.charAt(i)){
+				countCurly[r]+=1;
+			}
+			else if('('==s.charAt(i)){
+				countRound[l]+=1;
+			}
+			else if(')'==s.charAt(i)){
+				countRound[r]+=1;
+			}
+			else if('['==s.charAt(i)){
+				countSquare[l]+=1;
+			}
+			else if(']'==s.charAt(i)){
+				countSquare[r]+=1;
+			}
+			else{
+				continue;
+			}
+		}
+		setBracketLabel(countCurly[l],countCurly[r],'{');
+		setBracketLabel(countRound[l],countRound[r],'(');
+		setBracketLabel(countSquare[l],countSquare[r],'[');
+		bracketCount.setText(bracketCount.getText()+" is expected");
+	}
+
+	public void setBracketLabel(int l,int r,char c){
+		System.out.println(c+"c");
+		int a=c;
+		int a2;
+		if(a<45)
+			a2=a+1;
+		else
+			a2=a+2;
+		System.out.println(l+""+r);
+		if(l!=r){
+			if(l<r){
+				int d=r-l;
+				bracketCount.setText(bracketCount.getText()+" "+d+""+c);
+				System.out.println(c+" is expected");
+			}
+			else{
+				int d=l-r;
+				bracketCount.setText(bracketCount.getText()+" "+d+""+(char)(a2));
+				System.out.println((char)(a2)+" is expected ");
+			}
+		}
+	}
+		@Override
+		public void initialize (URL location, ResourceBundle resources){
+			undoList.add(tarea.getText());
+			tarea.setStyle("-fx-highlight-fill: lightgray; -fx-highlight-text-fill: firebrick; -fx-text-fill: black; -fx-background-color: green;");
+			totalLinecount();
+			saveForUndo();
+			brackets();
+		}
+	}
